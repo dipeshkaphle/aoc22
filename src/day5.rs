@@ -82,17 +82,23 @@ impl Day5 {
             .collect::<Vec<Instr>>()
     }
     fn parse() -> Input {
+        static ONCE: std::sync::Once = std::sync::Once::new();
         let buf = get_buffer("input/day5.txt");
-        let _two_parts = buf
-            .lines()
-            .map(|x| x.unwrap())
-            .collect::<Vec<String>>()
-            .split(|x| x.is_empty())
-            .map(|x| x.to_owned())
-            .collect::<Vec<Vec<String>>>();
-        Input {
-            stacks: Day5::parse_stack(_two_parts.first().unwrap()),
-            instrs: Day5::parse_instrs(_two_parts.last().unwrap()),
+
+        static mut LINES: Vec<String> = vec![];
+        static mut I: usize = 0;
+
+        ONCE.call_once(|| unsafe {
+            LINES = buf.lines().map(|x| x.unwrap()).collect::<Vec<String>>();
+
+            I = LINES.iter().position(|x| x.is_empty()).unwrap();
+        });
+
+        unsafe {
+            Input {
+                stacks: Day5::parse_stack(&LINES[..I]),
+                instrs: Day5::parse_instrs(&LINES[(I + 1)..]),
+            }
         }
     }
 
