@@ -5,19 +5,19 @@ use crate::get_buffer;
 #[derive(Debug)]
 pub struct Instr {
     pub mv_count: usize,
-    pub from: char,
-    pub to: char,
+    pub from: usize,
+    pub to: usize,
 }
 
 #[derive(Debug)]
 pub struct Input {
-    pub stacks: HashMap<char, Vec<char>>,
+    pub stacks: HashMap<usize, Vec<char>>,
     pub instrs: Vec<Instr>,
 }
 
 pub struct Day5 {}
 impl Day5 {
-    fn parse_stack(inp: &[String]) -> HashMap<char, Vec<char>> {
+    fn parse_stack(inp: &[String]) -> HashMap<usize, Vec<char>> {
         // inp.chun
         let mut linewise_hmap = inp
             .iter()
@@ -26,32 +26,25 @@ impl Day5 {
                     .collect::<Vec<char>>()
                     .as_slice()
                     .chunks(4 /*"[_] " => 4 characters*/)
-                    .enumerate()
-                    .filter_map(|(i, x)| {
+                    .map(|x| {
                         if *x.get(1).unwrap() == ' ' {
                             None
                         } else {
-                            Some((i, x.get(1).unwrap().to_owned()))
+                            Some(x.get(1).unwrap().to_owned())
                         }
                     })
-                    .collect::<HashMap<usize, char>>()
+                    .collect::<Vec<Option<char>>>()
             })
-            .collect::<Vec<HashMap<usize, char>>>();
+            .collect::<Vec<Vec<Option<char>>>>();
 
-        let mut indices = linewise_hmap
-            .pop()
-            .unwrap()
-            .values()
-            .map(|x| x.to_owned())
-            .collect::<Vec<char>>();
-        indices.sort();
+        linewise_hmap.pop();
         linewise_hmap
             .iter()
             .rev()
             .fold(HashMap::new(), |mut acc, e| {
-                for (i, c) in indices.iter().enumerate() {
-                    if let Some(x) = e.get(&i) {
-                        acc.entry(c.to_owned()).or_default().push(x.to_owned());
+                for (i, c) in e.iter().enumerate() {
+                    if let Some(x) = c {
+                        acc.entry(i + 1).or_default().push(x.to_owned());
                     }
                 }
                 acc
@@ -75,8 +68,8 @@ impl Day5 {
                 });
                 Instr {
                     mv_count: *out.0.first().unwrap(),
-                    from: (*out.0.get(1).unwrap() as u8 + b'0') as char,
-                    to: (*out.0.get(2).unwrap() as u8 + b'0') as char,
+                    from: *out.0.get(1).unwrap(),
+                    to: *out.0.get(2).unwrap(),
                 }
             })
             .collect::<Vec<Instr>>()
@@ -114,7 +107,7 @@ impl Day5 {
                 .into_iter()
                 .for_each(|x| stacks.get_mut(&instr.to).unwrap().push(x));
         }
-        let mut temp = stacks.into_iter().collect::<Vec<(char, Vec<char>)>>();
+        let mut temp = stacks.into_iter().collect::<Vec<(usize, Vec<char>)>>();
         temp.sort();
         temp.iter()
             .map(|x| x.1.last().map(|x| x.to_string()).unwrap())
